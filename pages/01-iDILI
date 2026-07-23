@@ -1,1 +1,151 @@
 
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(
+    page_title="iDILI 유발 의약품·식품 리스트",
+    page_icon="🧪",
+    layout="wide",
+)
+
+st.title("🧪 특발성 약인성 간손상(iDILI) 유발 의약품·식품 리스트")
+st.caption("전체 원인물질 목록 + 세계 보고 빈도 상위 10개 약물")
+
+st.markdown(
+    """
+**iDILI(Idiosyncratic DILI)** 는 용량과 무관하게 일부 개인에서만 예측 불가능하게 발생하는 간손상입니다.
+아세트아미노펜 과량처럼 **용량 의존적으로 누구에게나 발생하는 내인성(intrinsic) DILI는 제외**하고,
+개인의 면역·유전적 감수성(HLA 연관 등)에 따라 발생하는 원인물질만 정리했습니다.
+개별 환자의 진단·치료 판단을 대체하지 않는 일반 교육 목적의 요약입니다.
+"""
+)
+
+# ---------------------------------------------------------
+# 데이터: 전체 iDILI 원인물질 리스트
+# ---------------------------------------------------------
+data = [
+    ("아목시실린-클라불란산", "항생제(페니실린계)", "담즙정체형/혼합형", "전 세계 iDILI 보고에서 가장 흔한 단일 원인 약물, 고령 남성에서 호발"),
+    ("플루클록사실린", "항생제(페니실린계)", "담즙정체형", "HLA-B*57:01과 강한 연관, 노출 후 지연성 발현"),
+    ("트리메토프림-설파메톡사졸", "항생제(설파계)", "간세포형", "미국 DILIN 등록연구 상위 원인 약물"),
+    ("니트로푸란토인", "항생제(요로감염 치료제)", "간세포형(자가면역양상)", "장기 잠복기(>1년 가능), 자가면역성 간염 유사 소견"),
+    ("이소니아지드", "항결핵제", "간세포형", "아시아권 iDILI의 가장 흔한 원인, NAT2 유전형(아세틸화 속도)과 연관"),
+    ("리팜핀 / 피라진아미드", "항결핵제", "간세포형", "이소니아지드와 병용 시 위험 상승"),
+    ("미노사이클린", "항생제(테트라사이클린계)", "간세포형(자가면역양상)", "여드름 치료 목적 장기 복용, 젊은 여성에서 자가면역양상 흔함"),
+    ("에리트로마이신", "항생제(마크롤라이드계)", "담즙정체형", "세계 상위 10대 원인 약물"),
+    ("세프트리아존 등 세팔로스포린계", "항생제(세팔로스포린계)", "담즙정체형", "동아시아권 입원환자 DILI에서 보고 빈도 높음"),
+    ("디클로페낙", "NSAIDs", "간세포형", "세계 상위 10대 원인 약물"),
+    ("이부프로펜", "NSAIDs", "간세포형", "상대적으로 드묾이나 세계 상위 10대 원인 약물"),
+    ("설린닥", "NSAIDs", "간세포형/담즙정체형", "NSAIDs 중 상대적으로 위험도가 높은 편"),
+    ("발프로산", "항경련제", "간세포형(미토콘드리아 기전)", "소아, 다약제 병용 시 위험 증가"),
+    ("페니토인", "항경련제", "간세포형", "과민반응증후군(DRESS) 동반 가능"),
+    ("카바마제핀", "항경련제", "간세포형/혼합형", "세계 상위 10대 원인 약물, DRESS 동반 가능"),
+    ("라모트리진", "항경련제", "간세포형", "중증 피부반응 동반 사례 보고"),
+    ("아토르바스타틴", "스타틴(고지혈증약)", "간세포형", "세계 상위 10대 원인 약물, 발생 자체는 드묾"),
+    ("심바스타틴", "스타틴(고지혈증약)", "간세포형", "세계 상위 10대 원인 약물"),
+    ("아미오다론", "항부정맥제", "간세포형(지방간염 유사)", "장기 복용 시 만성 손상 가능"),
+    ("디설피람", "금주보조제", "간세포형", "세계 상위 10대 원인 약물"),
+    ("알로퓨리놀", "통풍치료제", "혼합형", "과민반응증후군(DRESS/SJS) 동반 가능"),
+    ("아나볼릭 스테로이드", "호르몬제/보디빌딩 보충제", "담즙정체형", "세계 상위 10대 원인 물질, 보충제 오남용과 관련"),
+    ("면역관문억제제 (펨브롤리주맙, 니볼루맙 등)", "항암제(면역치료제)", "간세포형(면역매개성 간염)", "최근 급증 추세, 스테로이드 치료에 반응"),
+    ("메틸도파", "항고혈압제", "간세포형(자가면역양상)", "임신성 고혈압 치료에 사용, 자가면역성 간염 유사"),
+    ("케토코나졸", "항진균제", "간세포형", "경구제형은 다수 국가에서 사용 제한됨"),
+    ("테르비나핀", "항진균제(무좀 치료제)", "담즙정체형", "장기 잠복기 후 발현 가능"),
+    ("독시사이클린", "항생제(테트라사이클린계)", "간세포형", "상대적으로 드묾"),
+    ("아자티오프린", "면역억제제", "간세포형/담즙정체형", "장기이식/자가면역질환 환자에서 사용"),
+    ("인플릭시맙", "항암/면역질환 생물학적제제", "간세포형(자가면역양상)", "자가면역성 간염 유사 소견 보고"),
+    ("둘록세틴", "항우울제", "간세포형", "DILIN에서 별도 연구된 약물"),
+]
+
+df_full = pd.DataFrame(data, columns=["약물명", "분류", "손상 패턴", "비고"])
+
+tab1, tab2, tab3 = st.tabs(["📋 전체 리스트", "📊 세계 보고 빈도 상위 10개", "📚 출처"])
+
+with tab1:
+    st.subheader("iDILI 원인 의약품 전체 리스트")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        keyword = st.text_input("🔍 약물명/분류 검색", "")
+    with col2:
+        pattern_filter = st.multiselect(
+            "손상 패턴 필터",
+            options=sorted(df_full["손상 패턴"].unique()),
+            default=[],
+        )
+
+    filtered = df_full.copy()
+    if keyword:
+        mask = filtered["약물명"].str.contains(keyword, case=False) | filtered["분류"].str.contains(keyword, case=False)
+        filtered = filtered[mask]
+    if pattern_filter:
+        filtered = filtered[filtered["손상 패턴"].isin(pattern_filter)]
+
+    st.dataframe(filtered, use_container_width=True, hide_index=True)
+    st.caption(f"총 {len(filtered)}개 항목 표시 중 (전체 {len(df_full)}개)")
+
+with tab2:
+    st.subheader("전 세계 보고 빈도 상위 10개 iDILI 원인 약물")
+
+    st.markdown(
+        """
+    아래 순위는 **Teschke & Danan (2018)** 이 RUCAM(Roussel Uclaf Causality Assessment Method)으로
+    인과성이 확인된 전 세계 iDILI 사례 **3,312건**을 검토해 정리한 "가장 흔하게 보고된 원인 약물" 순위입니다.
+    국가·코호트마다 정확한 비율은 다르므로, 이 그래프는 **절대 발생 빈도(%)가 아니라 보고 빈도
+    순위(1위~10위)** 를 상대적 막대 길이로 시각화한 것입니다.
+    """
+    )
+
+    rank_data = pd.DataFrame(
+        {
+            "약물명": [
+                "아목시실린-클라불란산",
+                "플루클록사실린",
+                "아토르바스타틴",
+                "디설피람",
+                "디클로페낙",
+                "심바스타틴",
+                "카바마제핀",
+                "이부프로펜",
+                "에리트로마이신",
+                "아나볼릭 스테로이드",
+            ],
+            "순위": list(range(1, 11)),
+        }
+    )
+    rank_data["상대적 보고 빈도(순위 환산)"] = 11 - rank_data["순위"]
+
+    chart_df = rank_data.set_index("약물명")[["상대적 보고 빈도(순위 환산)"]]
+    st.bar_chart(chart_df, horizontal=True)
+
+    st.dataframe(
+        rank_data[["순위", "약물명"]].rename(columns={"순위": "세계 보고 빈도 순위"}),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.info(
+        "참고: 미국 DILIN 등록연구(Chalasani 2008, 초기 300례) 단독 분석에서는 "
+        "**아목시실린-클라불란산 23례**로 단일 최다 원인이었고, "
+        "**트리메토프림-설파메톡사졸·니트로푸란토인·이소니아지드가 각 13례**로 공동 2위권을 이루었습니다. "
+        "동양권(중국·한국·인도)에서는 **이소니아지드 등 항결핵제**가 최다 원인으로 보고되는 등, "
+        "지역별 처방 패턴에 따라 순위 차이가 있습니다."
+    )
+
+with tab3:
+    st.header("출처")
+    st.markdown(
+        """
+    - Teschke R, Danan G. **Top ranking drugs out of 3312 drug induced liver injury cases evaluated by RUCAM.** *Expert Opin Drug Metab Toxicol.* 2018.
+    - Chalasani N, et al. **Causes, clinical features, and outcomes from a prospective study of drug-induced liver injury in the United States.** *Gastroenterology.* 2008;135(6):1924-34.
+    - Chalasani N, et al. **Features and outcomes of 899 patients with drug-induced liver injury: the DILIN prospective study.** *Gastroenterology.* 2015;148(7):1340-52.
+    - Andrade RJ, et al. **Drug-induced liver injury: an analysis of 461 incidences submitted to the Spanish registry.** *Gastroenterology.* 2005.
+    - Björnsson ES, et al. **East versus West: a systematic review and meta-analysis of DILI epidemiology.** *PMC.*
+    - Weber S, Gerbes AL. **Hepatotoxicity by Drugs: The Most Common Implicated Agents.** *Int J Mol Sci.* 2016.
+
+    ---
+    ⚠️ 본 자료는 일반적인 의학 교육 목적의 요약이며, 개별 환자에 대한 진단·처방 변경의 근거로 사용해서는 안 됩니다.
+    """
+    )
+
+st.divider()
+st.caption("© iDILI 유발 의약품·식품 리스트 — Streamlit 예제 앱")
