@@ -1,1 +1,150 @@
 
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(
+    page_title="DILI 유발 의약품·식품 리스트",
+    page_icon="💊",
+    layout="wide",
+)
+
+st.title("💊 약인성 간손상(DILI) 유발 의약품·식품 리스트")
+st.caption("전체 원인물질 목록 + 세계 보고 빈도 상위 10개 약물")
+
+st.markdown(
+    """
+아래 목록은 문헌(DILIN 미국 등록연구, 스페인 DILI 등록연구, 유럽 DILI 등록연구,
+전 세계 RUCAM 기반 코호트 등)에 보고된 주요 DILI/HILI 원인 의약품·식품을 정리한 것입니다.
+개별 환자의 진단·치료 판단을 대체하지 않으며, 일반 교육 목적의 요약입니다.
+"""
+)
+
+# ---------------------------------------------------------
+# 데이터: 전체 원인물질 리스트
+# ---------------------------------------------------------
+data = [
+    # 이름, 분류, 유형(내인성/특발성/HILI), 손상패턴, 비고
+    ("아세트아미노펜", "진통해열제", "내인성(용량의존)", "간세포형", "가장 대표적인 용량의존성 간독성 물질, 과량 복용 시 급성간부전 위험"),
+    ("아목시실린-클라불란산", "항생제(페니실린계)", "특발성(iDILI)", "담즙정체/혼합형", "전 세계 DILI 보고에서 가장 흔한 단일 원인 약물"),
+    ("플루클록사실린", "항생제(페니실린계)", "특발성(iDILI)", "담즙정체형", "HLA-B*57:01과 연관, 지연성 발현 흔함"),
+    ("트리메토프림-설파메톡사졸", "항생제(설파계)", "특발성(iDILI)", "간세포형", "DILIN 등록연구 상위 원인 약물"),
+    ("니트로푸란토인", "항생제(요로감염)", "특발성(iDILI)", "간세포형(자가면역양상)", "장기 잠복기, 자가면역성 간염 유사 소견 가능"),
+    ("이소니아지드", "항결핵제", "특발성(iDILI)", "간세포형", "아시아권 DILI의 가장 흔한 원인, NAT2 유전형과 연관"),
+    ("리팜핀/피라진아미드", "항결핵제", "특발성(iDILI)", "간세포형", "이소니아지드와 병용 시 위험 증가"),
+    ("미노사이클린", "항생제(테트라사이클린계)", "특발성(iDILI)", "간세포형(자가면역양상)", "장기 복용 후 지연성 발현, 젊은 여성에서 자가면역양상 흔함"),
+    ("에리트로마이신", "항생제(마크롤라이드계)", "특발성(iDILI)", "담즙정체형", "세계 상위 10대 원인 약물"),
+    ("디클로페낙", "NSAIDs", "특발성(iDILI)", "간세포형", "세계 상위 10대 원인 약물"),
+    ("이부프로펜", "NSAIDs", "특발성(iDILI)", "간세포형", "상대적으로 드묾, 세계 상위 10대 원인 약물"),
+    ("설린닥", "NSAIDs", "특발성(iDILI)", "간세포형", "NSAIDs 중 상대적으로 위험도 높은 편"),
+    ("발프로산", "항경련제", "특발성(iDILI)", "간세포형(미토콘드리아)", "소아·다약제 병용 시 위험 증가"),
+    ("페니토인/카바마제핀", "항경련제", "특발성(iDILI)", "간세포형", "과민반응증후군(DRESS) 동반 가능"),
+    ("아토르바스타틴/심바스타틴", "스타틴(고지혈증약)", "특발성(iDILI)", "간세포형", "세계 상위 10대 원인 약물, 발생 자체는 드묾"),
+    ("아미오다론", "항부정맥제", "특발성(iDILI)", "간세포형(지방간염 유사)", "장기 복용 시 만성 손상 가능"),
+    ("디설피람", "금주보조제", "특발성(iDILI)", "간세포형", "세계 상위 10대 원인 약물"),
+    ("알로퓨리놀", "통풍치료제", "특발성(iDILI)", "혼합형", "과민반응증후군 동반 가능"),
+    ("아나볼릭 스테로이드", "호르몬제/보디빌딩 보충제", "특발성(iDILI)", "담즙정체형", "세계 상위 10대 원인 물질, 보충제 오남용과 관련"),
+    ("면역관문억제제(펨브롤리주맙 등)", "항암제(면역치료제)", "간접(Indirect) DILI", "간세포형(면역매개성 간염)", "최근 급증 추세, 스테로이드 치료 반응"),
+    ("메토트렉세이트", "항암제/면역억제제", "내인성(누적용량)", "지방간/섬유화", "누적 용량에 비례한 만성 손상"),
+    ("하수오(何首烏)", "한약재(HILI)", "HILI", "간세포형", "아시아권 HILI 대표 원인"),
+    ("카바(Kava)", "허브 보충제(HILI)", "HILI", "간세포형", "중증 간부전 보고 사례 있음"),
+    ("그린티 추출물(EGCG)", "체중감량 보충제(HILI)", "HILI", "간세포형", "고농도 카테킨 함유 제품에서 보고"),
+    ("아쉬와간다", "아유르베다 제제(HILI)", "HILI", "간세포형/담즙정체형", "최근 보고 증가 중"),
+    ("헤르발라이프 등 복합 보충제", "체중감량 제품(HILI)", "HILI", "간세포형", "다성분 혼합물로 원인성분 특정 어려움"),
+]
+
+df_full = pd.DataFrame(data, columns=["약물/물질명", "분류", "DILI 유형", "손상 패턴", "비고"])
+
+# ---------------------------------------------------------
+# TAB 구성
+# ---------------------------------------------------------
+tab1, tab2, tab3 = st.tabs(["📋 전체 리스트", "📊 세계 보고 빈도 상위 10개", "📚 출처"])
+
+with tab1:
+    st.subheader("DILI 원인 의약품·식품 전체 리스트")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        keyword = st.text_input("🔍 약물명/분류 검색", "")
+    with col2:
+        type_filter = st.multiselect(
+            "DILI 유형 필터",
+            options=sorted(df_full["DILI 유형"].unique()),
+            default=[],
+        )
+
+    filtered = df_full.copy()
+    if keyword:
+        mask = filtered["약물/물질명"].str.contains(keyword, case=False) | filtered["분류"].str.contains(keyword, case=False)
+        filtered = filtered[mask]
+    if type_filter:
+        filtered = filtered[filtered["DILI 유형"].isin(type_filter)]
+
+    st.dataframe(filtered, use_container_width=True, hide_index=True)
+    st.caption(f"총 {len(filtered)}개 항목 표시 중 (전체 {len(df_full)}개)")
+
+with tab2:
+    st.subheader("전 세계 보고 빈도 상위 10개 원인 약물")
+
+    st.markdown(
+        """
+    아래 순위는 **Teschke & Danan (2018)** 이 RUCAM(Roussel Uclaf Causality Assessment Method)으로
+    인과성이 확인된 전 세계 DILI 사례 **3,312건**을 검토하여 정리한 "가장 흔하게 보고된 원인 약물"
+    순위입니다. 각 코호트(국가·연구)마다 정확한 비율은 다르므로, 이 그래프는 **절대적 발생 빈도(%)가 아니라
+    보고 빈도 순위(1위~10위)** 를 상대적 막대 길이로 시각화한 것입니다.
+    """
+    )
+
+    rank_data = pd.DataFrame(
+        {
+            "약물명": [
+                "아목시실린-클라불란산",
+                "플루클록사실린",
+                "아토르바스타틴",
+                "디설피람",
+                "디클로페낙",
+                "심바스타틴",
+                "카바마제핀",
+                "이부프로펜",
+                "에리트로마이신",
+                "아나볼릭 스테로이드",
+            ],
+            "순위": list(range(1, 11)),
+        }
+    )
+    # 순위를 시각적 막대 길이로 변환 (1위가 가장 긴 막대)
+    rank_data["상대적 보고 빈도(순위 환산)"] = 11 - rank_data["순위"]
+
+    chart_df = rank_data.set_index("약물명")[["상대적 보고 빈도(순위 환산)"]]
+    st.bar_chart(chart_df, horizontal=True)
+
+    st.dataframe(
+        rank_data[["순위", "약물명"]].rename(columns={"순위": "세계 보고 빈도 순위"}),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.info(
+        "참고: 미국 DILIN 등록연구(Chalasani 2008, 초기 300례) 단독 분석에서는 "
+        "**아목시실린-클라불란산 23례**로 단일 최다 원인이었고, "
+        "**트리메토프림-설파메톡사졸·니트로푸란토인·이소니아지드가 각 13례**로 공동 2위권을 이루었습니다. "
+        "국가/연구별로 처방 패턴이 다르므로 순위는 다소 차이가 있을 수 있습니다."
+    )
+
+with tab3:
+    st.header("출처")
+    st.markdown(
+        """
+    - Teschke R, Danan G. **Top ranking drugs out of 3312 drug induced liver injury cases evaluated by RUCAM.** *Expert Opin Drug Metab Toxicol.* 2018.
+    - Chalasani N, et al. **Causes, clinical features, and outcomes from a prospective study of drug-induced liver injury in the United States.** *Gastroenterology.* 2008;135(6):1924-34.
+    - Chalasani N, et al. **Features and outcomes of 899 patients with drug-induced liver injury: the DILIN prospective study.** *Gastroenterology.* 2015;148(7):1340-52.
+    - Andrade RJ, et al. **Drug-induced liver injury: an analysis of 461 incidences submitted to the Spanish registry.** *Gastroenterology.* 2005.
+    - Weber S, Gerbes AL. **Hepatotoxicity by Drugs: The Most Common Implicated Agents.** *Int J Mol Sci.* 2016.
+    - Navarro VJ, et al. **Liver injury from herbals and dietary supplements in the U.S. DILIN.** *Hepatology.* 2014.
+
+    ---
+    ⚠️ 본 자료는 일반적인 의학 교육 목적의 요약이며, 개별 환자에 대한 진단·처방 변경의 근거로 사용해서는 안 됩니다.
+    """
+    )
+
+st.divider()
+st.caption("© DILI 유발 의약품·식품 리스트 — Streamlit 예제 앱")
