@@ -297,3 +297,147 @@ with tab5:
 
 st.divider()
 st.caption("© DILI · iDILI · HILI 비교분석 대시보드 — Streamlit 예제 앱")
+
+
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(
+    page_title="HILI 유발 허브·식품 리스트",
+    page_icon="🌿",
+    layout="wide",
+)
+
+st.title("🌿 허브유발 간손상(HILI) 유발 허브·식품 리스트")
+st.caption("전체 원인 허브/보충제 목록 + 세계 보고 빈도 상위 10개")
+
+st.markdown(
+    """
+아래 목록은 HILI(Herb-Induced Liver Injury) 관련 체계적 문헌고찰(systematic review) 및
+사례보고 취합(pooled case-report) 연구에서 보고된 주요 원인 허브·건강기능식품을 정리한 것입니다.
+개별 제품의 안전성을 판단하는 근거가 아니며, 일반 교육 목적의 요약입니다.
+"""
+)
+
+# ---------------------------------------------------------
+# 데이터: 전체 HILI 원인 허브/제품 리스트
+# ---------------------------------------------------------
+data = [
+    ("하수오 (何首烏, He-Shou-Wu / Polygonum multiflorum)", "모발/항노화 강장 한약재", "간세포형", "아시아권(중국·한국) HILI 최다 원인, 잠복기 평균 약 58일"),
+    ("그린티 추출물 (Green tea extract, EGCG)", "체중감량 보충제", "간세포형", "고농도 카테킨(EGCG) 함유 제품에서 보고, HLA-B*35:01과 연관"),
+    ("헤르발라이프 제품 (Herbalife)", "체중감량/건강기능식품 브랜드", "간세포형", "다성분 복합제, 개별 원인성분 특정이 어려움"),
+    ("카바카바 (Kava kava, Piper methysticum)", "불안/불면 완화 허브차", "간세포형", "중년 여성에서 호발, 중증 간부전·이식 사례 보고"),
+    ("애기똥풀 (Greater celandine, Chelidonium majus)", "소화불량 개선 허브(유럽 전통)", "간세포형/담즙정체형", "독일 등 유럽에서 보고 비중 높음"),
+    ("하이드록시컷 (Hydroxycut)", "체중감량 보충제 브랜드", "간세포형", "미국에서 다수 보고, 2009년 리콜 사례"),
+    ("옥시엘리트 프로 (OxyElite Pro)", "체중감량/보디빌딩 보충제", "간세포형", "2013년 미국 하와이 집단 발병 사례로 유명"),
+    ("저먼더 (Germander, Teucrium chamaedrys)", "체중감량 허브(과거 유럽 사용)", "간세포형", "1990년대 프랑스에서 다수 보고 후 판매 중단"),
+    ("스컬캡/황금 (Skullcap, Scutellaria spp.)", "항불안/항염 허브", "간세포형", "미국에서 다수 보고, 저먼더 혼입 사례도 있었음"),
+    ("크라톰 (Kratom, Mitragyna speciosa)", "통증완화/기분전환 식물", "간세포형/담즙정체형", "동남아시아 원산, 미국 내 사용 증가와 함께 보고 증가"),
+    ("투산치/천칠 (Gynura segetum, Tusanqi)", "혈액순환 개선 한약재", "간정맥폐쇄병(VOD) 유사", "중국에서 다수 보고, 피롤리지딘 알칼로이드 함유"),
+    ("가르시니아 캄보지아 (Garcinia cambogia)", "체중감량 보충제", "간세포형", "하이드록시시트르산(HCA) 함유 제품"),
+    ("마황 (Ma huang, Ephedra sinica)", "체중감량/각성 한약재", "간세포형", "심혈관계 부작용과 함께 보고, 다수 국가에서 규제"),
+    ("차파랄 (Chaparral, Larrea tridentata)", "항산화 허브(북미 전통)", "간세포형/담즙정체형", "미국 원주민 전통 사용, 급성 간부전 보고"),
+    ("센나 (Senna spp.)", "변비 완화 허브 하제", "간세포형", "장기·고용량 사용 시 보고, 비교적 젊은 연령층에서 발생"),
+    ("알로에 베라 (Aloe vera, 경구섭취)", "변비/디톡스 보조제", "간세포형", "경구 섭취 제품에서 보고, 국소 사용과는 무관"),
+    ("강황/커큐민 고용량 제제 (Turmeric/Curcumin)", "항염 보충제", "간세포형/담즙정체형", "흡수촉진제(피페린) 병용 제품에서 보고 증가, HLA-B*35:01 연관"),
+    ("아쉬와간다 (Ashwagandha)", "아유르베다 적응증 보충제", "간세포형/담즙정체형", "최근 보고 증가 중인 인도 전통의학 제제"),
+    ("프소랄레아 (Psoralea corylifolia, 보골지)", "탈모/골다공증 개선 한약재", "간세포형", "중국 HILI 주요 원인 중 하나"),
+    ("현호색 (Corydalis yanhusuo, 연호색)", "진통 목적 한약재", "간세포형", "중국 HILI 주요 원인 중 하나"),
+]
+
+df_full = pd.DataFrame(data, columns=["허브/제품명", "주요 사용 목적", "손상 패턴", "비고"])
+
+tab1, tab2, tab3 = st.tabs(["📋 전체 리스트", "📊 세계 보고 빈도 상위 10개", "📚 출처"])
+
+with tab1:
+    st.subheader("HILI 원인 허브·건강기능식품 전체 리스트")
+
+    keyword = st.text_input("🔍 허브/제품명 검색", "")
+    filtered = df_full.copy()
+    if keyword:
+        mask = filtered["허브/제품명"].str.contains(keyword, case=False) | filtered["주요 사용 목적"].str.contains(keyword, case=False)
+        filtered = filtered[mask]
+
+    st.dataframe(filtered, use_container_width=True, hide_index=True)
+    st.caption(f"총 {len(filtered)}개 항목 표시 중 (전체 {len(df_full)}개)")
+
+with tab2:
+    st.subheader("전 세계 보고 빈도 상위 10개 원인 허브·제품")
+
+    st.markdown(
+        """
+    아래 순위는 두 편의 문헌을 종합한 것입니다.
+
+    - **Ballotin 등 (2021), World J Clin Cases** — HILI 체계적 문헌고찰·메타분석 (총 936례, 79종 허브 분석)
+    - **사례보고 취합(Pooled case-report) 분석 (2022)** — 총 428례의 개별 사례 취합 (실제 보고 건수 확인 가능)
+
+    두 연구는 표본과 방법론이 달라 **정확한 절대 수치를 하나의 축으로 직접 비교하기는 어렵습니다.**
+    따라서 아래 그래프는 두 문헌에서 공통으로 확인되는 **보고 빈도 순위(1위~10위)** 를 상대적
+    막대 길이로 나타낸 것이며, 표에는 각 문헌에서 확인 가능한 **실제 수치**를 함께 표기했습니다.
+    """
+    )
+
+    rank_data = pd.DataFrame(
+        {
+            "허브/제품명": [
+                "하수오 (He-Shou-Wu)",
+                "그린티 추출물",
+                "헤르발라이프",
+                "카바카바",
+                "애기똥풀",
+                "하이드록시컷",
+                "옥시엘리트 프로",
+                "저먼더",
+                "스컬캡/황금",
+                "크라톰",
+            ],
+            "순위": list(range(1, 11)),
+            "실제 보고 수치 (출처)": [
+                "8.3% / 936례 중 (Ballotin 2021); 25례 / 428례 중 (Pooled 2022)",
+                "8.3% / 936례 중 (Ballotin 2021); 19례 / 428례 중 (Pooled 2022)",
+                "5.9% / 936례 중 (Ballotin 2021); 50례 / 428례 중, 최다 (Pooled 2022)",
+                "5.7% / 936례 중 (Ballotin 2021); 16례 / 428례 중 (Pooled 2022)",
+                "4.4% / 936례 중 (Ballotin 2021)",
+                "19례 / 428례 중 (Pooled 2022)",
+                "16례 / 428례 중 (Pooled 2022)",
+                "Ballotin(2021) 순위 6위권 (정확한 %는 원문 미기재)",
+                "Ballotin(2021) 순위 8위권 (정확한 %는 원문 미기재)",
+                "Ballotin(2021) 순위 9위권 (정확한 %는 원문 미기재)",
+            ],
+        }
+    )
+    rank_data["상대적 보고 빈도(순위 환산)"] = 11 - rank_data["순위"]
+
+    chart_df = rank_data.set_index("허브/제품명")[["상대적 보고 빈도(순위 환산)"]]
+    st.bar_chart(chart_df, horizontal=True)
+
+    st.dataframe(
+        rank_data[["순위", "허브/제품명", "실제 보고 수치 (출처)"]],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.info(
+        "국가별 편차가 큽니다: **하수오·투산치**는 중국·한국 등 아시아에서, "
+        "**애기똥풀·저먼더**는 독일 등 유럽에서, **그린티 추출물·스컬캡·크라톰·차파랄**은 미국에서 "
+        "상대적으로 더 많이 보고되는 경향을 보입니다."
+    )
+
+with tab3:
+    st.header("출처")
+    st.markdown(
+        """
+    - Ballotin VR, et al. **Herb-Induced Liver Injury: Systematic Review and Meta-Analysis.** *World J Clin Cases.* 2021;9(20):5490-5513.
+    - **Liver Injury Induced by Herbal and Dietary Supplements: A Pooled Analysis of Case Reports.** *(PubMed ID 36515339)*, 2022.
+    - Navarro VJ, et al. **Liver injury from herbals and dietary supplements in the U.S. DILIN.** *Hepatology.* 2014;60(4):1399-1408.
+    - Teschke R, et al. **RUCAM in Drug and Herb Induced Liver Injury: The Update.** *Int J Mol Sci.* 2016.
+    - Zhu Y, et al. **Herb-Induced Liver Injury Related to Reynoutria multiflora.** review, PMC.
+
+    ---
+    ⚠️ 본 자료는 일반적인 의학 교육 목적의 요약이며, 특정 제품 사용 여부에 대한 결정 근거로 사용해서는 안 됩니다.
+    간손상이 의심되는 경우 복용 중인 모든 허브·보충제·한약재를 반드시 의료진에게 알리시기 바랍니다.
+    """
+    )
+
+st.divider()
+st.caption("© HILI 유발 허브·식품 리스트 — Streamlit 예제 앱")
